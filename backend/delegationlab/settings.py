@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     db_filename: str = "delegationlab.sqlite"
     ollama_url: str = "http://localhost:11434"
     ollama_probe_timeout_s: float = 2.0
+    # Sized for a 16 GB Apple-silicon laptop; see README "Hardware" for other machines.
+    default_model: str = "gemma3:12b"
+    default_concurrency: int = 2
+    prompts_dir: Path = REPO_ROOT / "prompts"
+    openai_compat_base_url: str | None = None
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
     )

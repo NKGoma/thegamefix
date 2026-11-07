@@ -27,6 +27,8 @@ def make_engine(settings: Settings) -> Engine:
 
 
 def init_db(engine: Engine) -> None:
+    from delegationlab.db import models  # noqa: F401  (registers tables)
+
     SQLModel.metadata.create_all(engine)
 
 

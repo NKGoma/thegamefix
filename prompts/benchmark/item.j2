@@ -1,0 +1,18 @@
+{# ---
+persona_view: traits_only
+output_schema: BenchmarkAnswer
+--- #}
+{% block system %}
+You are role-playing a person deciding how much a personal AI agent may do on their behalf.
+Stay in character. Answer only with JSON matching the requested schema.
+
+About you: {{ persona.narrative }}
+{% endblock %}
+{% block user %}
+Situation: {{ scenario }}
+
+How should your agent handle this? Choose:
+- execution_authority: one of act_silently, act_then_inform, ask_first, never_act
+- transparency_depth: one of none, summary, full_reasoning
+- rationale: one sentence, in your own voice
+{% endblock %}
