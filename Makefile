@@ -4,13 +4,17 @@ OLLAMA_URL ?= $(or $(DELEGATIONLAB_OLLAMA_URL),http://localhost:11434)
 MODEL ?= gemma3:12b
 PROVIDER ?= ollama
 
-.PHONY: help doctor install dev backend frontend check-ollama test test-ollama lint format gen-api \
+DEV_PORTS := 8000 5173
+
+.PHONY: help doctor install dev stop backend frontend check-ollama check-ports test test-ollama \
+	lint format gen-api \
 	benchmark export static
 
 help:
 	@echo "make doctor    check that uv, node, npm and curl are installed"
 	@echo "make install   install backend (uv) and frontend (npm) dependencies"
 	@echo "make dev       run backend :8000 + frontend :5173 (installs on first run)"
+	@echo "make stop      stop whatever is listening on ports 8000 and 5173"
 	@echo "make test      backend tests (excluding @ollama) + frontend typecheck"
 	@echo "make lint      ruff, mypy, eslint"
 	@echo "make format    auto-format backend code"
@@ -47,7 +51,34 @@ check-ollama:
 		echo "⚠ Ollama not reachable at $(OLLAMA_URL); start it with 'ollama serve' (the dashboard will still run)"; \
 	fi
 
-dev: install check-ollama
+# Refuse to start when a port is taken (e.g. a backend left over from an earlier `make dev`),
+# instead of letting one server die while the other keeps running.
+check-ports:
+	@if ! command -v lsof >/dev/null; then echo "(lsof not found; skipping port check)"; exit 0; fi; \
+	busy=0; \
+	for port in $(DEV_PORTS); do \
+		pids=$$(lsof -nP -iTCP:$$port -sTCP:LISTEN -t 2>/dev/null); \
+		if [ -n "$$pids" ]; then \
+			busy=1; \
+			echo "✗ Port $$port is already in use by:"; \
+			for pid in $$pids; do echo "    $$(ps -o pid=,command= -p $$pid)"; done; \
+			echo "  Stop it with:  kill $$(echo $$pids)"; \
+		fi; \
+	done; \
+	if [ $$busy = 1 ]; then echo "  Or stop both ports at once with:  make stop"; exit 1; fi
+
+stop:
+	@if ! command -v lsof >/dev/null; then echo "lsof not found; cannot look up processes"; exit 1; fi; \
+	for port in $(DEV_PORTS); do \
+		pids=$$(lsof -nP -iTCP:$$port -sTCP:LISTEN -t 2>/dev/null); \
+		if [ -n "$$pids" ]; then \
+			kill $$pids && echo "Stopped process $$(echo $$pids) on port $$port"; \
+		else \
+			echo "Port $$port is free"; \
+		fi; \
+	done
+
+dev: install check-ports check-ollama
 	@trap 'kill 0' EXIT INT TERM; \
 	(cd backend && uv run uvicorn delegationlab.main:create_app --factory --reload --port 8000) & \
 	(cd frontend && npm run dev) & \

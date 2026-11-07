@@ -52,10 +52,17 @@ The MacBook Air has no fan. On long runs it slows down as it heats up, so re-ben
 ### Ollama settings (macOS)
 
 ```bash
-launchctl setenv OLLAMA_NUM_PARALLEL 2     # must be >= max_concurrency for real parallelism
-launchctl setenv OLLAMA_KEEP_ALIVE 30m     # keep the model loaded between calls
-# then quit and reopen the Ollama app
+launchctl setenv OLLAMA_NUM_PARALLEL 2
+launchctl setenv OLLAMA_KEEP_ALIVE 30m
 ```
+
+Then quit and reopen the Ollama app. `OLLAMA_NUM_PARALLEL` must be at least the configured concurrency for calls to run in parallel. `OLLAMA_KEEP_ALIVE` keeps the model loaded between calls.
+
+## Troubleshooting
+
+- **`Port 8000 is already in use`**: an earlier `make dev`, or another app, is still running. `make dev` names the process. Stop it with `make stop`, then run `make dev` again.
+- **`uv: command not found`** right after installing uv: open a new Terminal window so your shell finds `~/.local/bin`.
+- **"accepts 1 arg(s), received N"** or similar: the macOS Terminal (zsh) does not treat `# ...` after a command as a comment. Paste commands without trailing comments.
 
 ## Reproducibility
 
